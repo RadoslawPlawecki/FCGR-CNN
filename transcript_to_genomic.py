@@ -39,7 +39,9 @@ vm = hgvs.variantmapper.VariantMapper(hdp)
 print("[INFO] Initialization finished")
 
 print("=== [4] Start mapping c -> g ===")
+
 g_vars = []
+
 for i, cleaned_name in enumerate(cleaned_names):
     print(f"\n[4.{i}] Variant processing: {cleaned_name}")
     try:
@@ -72,7 +74,8 @@ for i, cleaned_name in enumerate(cleaned_names):
 
 output_filename = "final_data_clinvar.csv"
 print(f"=== [5] Saving to {output_filename} ===")
+
 df["GenomicReference"] = g_vars
-df.to_csv(f"data/{output_filename}.csv", sep=';', index=False)
+df.to_csv(f"data/{output_filename}", sep=';', index=False)
 
 print("\n=== PROGRAM FINISHED ===")
