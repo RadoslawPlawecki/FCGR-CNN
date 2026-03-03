@@ -41,44 +41,36 @@ print("[INFO] Initialization finished")
 print("=== [4] Start mapping c -> g ===")
 
 g_vars = []
-success_count = 0 
 
-with tqdm(total=len(cleaned_names), desc="Converting variants") as pbar:
-        for i, cleaned_name in enumerate(cleaned_names):
-                print(f"\n[4.{i}] Variant processing: {cleaned_name}")
-                try:
-                        if cleaned_name.startswith("NC_"):
-                                g_vars.append(cleaned_name)
-                                success_count += 1
-                                print(f"   -> No change: {cleaned_name}")
-                        else:
-                                c_var = hp.parse_hgvs_variant(cleaned_name)
-                                print(f"   -> Parsed: {c_var}")
+for i, cleaned_name in enumerate(cleaned_names):
+    print(f"\n[4.{i}] Variant processing: {cleaned_name}")
+    try:
+        if cleaned_name.startswith("NC_"):
+            g_vars.append(cleaned_name)
+            print(f"   -> No change: {cleaned_name}")
+            continue
 
-                                # download genomic accession
-                                tx_ac = c_var.ac
-                                print(f"   -> Transcript: {tx_ac}")
+        c_var = hp.parse_hgvs_variant(cleaned_name)
+        print(f"   -> Parsed: {c_var}")
 
-                                # download mappings
-                                mappings = hdp.get_tx_mapping_options(tx_ac)
-                                print(f"   -> Number of available mappings: {len(mappings)}")
+        # download genomic accession
+        tx_ac = c_var.ac
+        print(f"   -> Transcript: {tx_ac}")
 
-                                alt_ac = mappings[1][1]
-                                print(f"   -> Chosen genomic accession: {alt_ac}")
+        # download mappings
+        mappings = hdp.get_tx_mapping_options(tx_ac)
+        print(f"   -> Number of available mappings: {len(mappings)}")
 
-                                # conversion
-                                g_var = vm.c_to_g(c_var, alt_ac)
-                                print(f"   -> Genomic result: {g_var}")
-                                g_vars.append(g_var)
+        alt_ac = mappings[1][1]
+        print(f"   -> Chosen genomic accession: {alt_ac}")
 
-                                success_count += 1
+        # conversion
+        g_var = vm.c_to_g(c_var, alt_ac)
+        print(f"   -> Genomic result: {g_var}")
+        g_vars.append(g_var)
 
-                except Exception as e:
-                        print(f"   !! Found an error while processing {cleaned_name}: {e}")
-                
-                current_rate = (success_count / len(g_vars)) * 100
-                pbar.set_postfix({"Conversion rate": f"{current_rate:.2f}%"})
-                pbar.update(1)
+    except Exception as e:
+        print(f"   !! Found an error while processing {cleaned_name}: {e}")
 
 output_filename = "final_data_clinvar.csv"
 print(f"=== [5] Saving to {output_filename} ===")
