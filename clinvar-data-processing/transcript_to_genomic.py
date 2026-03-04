@@ -5,6 +5,8 @@
 import pandas as pd
 import re
 
+from tqdm import tqdm
+
 from hgvs.dataproviders.uta import connect
 import hgvs.parser
 import hgvs.variantmapper
@@ -14,7 +16,7 @@ input_filename = "cleaned_data_clinvar.csv"
 print(f"=== [1] Loading file {input_filename} ===")
 
 data = pd.read_csv(f"data/{input_filename}", delimiter=';')
-df = pd.DataFrame(data)[33:43]
+df = pd.DataFrame(data)
 print(f"[INFO] {len(df)} data rows loaded")
 
 names = df['Name']
@@ -42,35 +44,37 @@ print("=== [4] Start mapping c -> g ===")
 
 g_vars = []
 
-for i, cleaned_name in enumerate(cleaned_names):
-    print(f"\n[4.{i}] Variant processing: {cleaned_name}")
-    try:
-        if cleaned_name.startswith("NC_"):
-            g_vars.append(cleaned_name)
-            print(f"   -> No change: {cleaned_name}")
-            continue
+with tqdm(total=len(cleaned_names), desc="Mapping c -> g") as pbar:
+    for i, cleaned_name in enumerate(cleaned_names):
+        print(f"\n[4.{i}] Variant processing: {cleaned_name}")
+        try:
+            if cleaned_name.startswith("NC_"):
+                g_vars.append(cleaned_name)
+                print(f"   -> No change: {cleaned_name}")
+            else:
+                c_var = hp.parse_hgvs_variant(cleaned_name)
+                print(f"   -> Parsed: {c_var}")
 
-        c_var = hp.parse_hgvs_variant(cleaned_name)
-        print(f"   -> Parsed: {c_var}")
+                # download genomic accession
+                tx_ac = c_var.ac
+                print(f"   -> Transcript: {tx_ac}")
 
-        # download genomic accession
-        tx_ac = c_var.ac
-        print(f"   -> Transcript: {tx_ac}")
+                # download mappings
+                mappings = hdp.get_tx_mapping_options(tx_ac)
+                print(f"   -> Number of available mappings: {len(mappings)}")
 
-        # download mappings
-        mappings = hdp.get_tx_mapping_options(tx_ac)
-        print(f"   -> Number of available mappings: {len(mappings)}")
+                alt_ac = mappings[1][1]
+                print(f"   -> Chosen genomic accession: {alt_ac}")
 
-        alt_ac = mappings[1][1]
-        print(f"   -> Chosen genomic accession: {alt_ac}")
+                # conversion
+                g_var = vm.c_to_g(c_var, alt_ac)
+                print(f"   -> Genomic result: {g_var}")
+                g_vars.append(g_var)
 
-        # conversion
-        g_var = vm.c_to_g(c_var, alt_ac)
-        print(f"   -> Genomic result: {g_var}")
-        g_vars.append(g_var)
+        except Exception as e:
+            print(f"   !! Found an error while processing {cleaned_name}: {e}")
 
-    except Exception as e:
-        print(f"   !! Found an error while processing {cleaned_name}: {e}")
+        pbar.update(1)
 
 output_filename = "final_data_clinvar.csv"
 print(f"=== [5] Saving to {output_filename} ===")
