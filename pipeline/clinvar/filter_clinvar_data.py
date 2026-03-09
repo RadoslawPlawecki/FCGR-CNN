@@ -4,7 +4,7 @@
 
 import pandas as pd
 
-df = pd.read_csv("clinvar_result.txt", sep="\t", low_memory=False, index_col=0)
+df = pd.read_csv("data/clinvar/01_clinvar_dataset.txt", sep="\t", low_memory=False, index_col=0)
 
 columns_to_keep = [
     "Gene(s)",
@@ -52,5 +52,5 @@ df["label"] = df["Germline classification"].apply(
 # if a variant affects several genes, use first gene
 df["PrimaryGene"] = df["Gene(s)"].str.split("|").str[0]
 
-# df.to_csv("cleaned_data_clinvar.csv", sep=';', index=True)
+# df.to_csv("02_raw_clinvar.csv", sep=';', index=True)
 print(df["label"].value_counts())
