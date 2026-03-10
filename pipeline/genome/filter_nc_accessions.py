@@ -1,24 +1,16 @@
 """
-@author: Radosław Pławecki
+@author: Radosław Pławecki, Filip Mirski
 """
 
 from Bio import SeqIO
-
 import pandas as pd
+import os
 
-records = list(SeqIO.parse("data/genome/01_GCF_000001405.26_GRCh38_genomic.fna", "fasta"))
+if not os.path.isdir("data/genome/chr/"):
+    os.makedirs("data/genome/chr/", exist_ok=True)
 
-accessions, sequences = [], []
-for i, record in enumerate(records):
+for record in SeqIO.parse("data/genome/01_GCF_000001405.26_GRCh38_genomic.fna", "fasta"):
     if record.id.startswith("NC_"):
-        accessions.append(record.id)
-        sequences.append(record.seq)
-
-data = {
-    "GenAcc": accessions,
-    "RefSeq": sequences
-}
-
-df = pd.DataFrame(data)
-df.to_csv("data/genome/02_genome_nc_only.csv", sep=';', index=True)
-
+        print(f"[INFO] Processing {record.id}...")
+        with open(f"data/genome/chr/{record.id}.txt", 'w') as f:
+            f.write(str(record.seq).upper())
