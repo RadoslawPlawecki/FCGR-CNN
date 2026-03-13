@@ -6,7 +6,6 @@ import os
 import re
 import pandas as pd
 from tqdm import tqdm
-from validators import grch38loc_validator
 
 
 class ChunksPreprocessor:
