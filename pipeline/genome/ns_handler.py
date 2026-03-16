@@ -4,7 +4,7 @@
 
 class NsHandler:
     """
-    Class to analyse and trim leading/trailing N's in a sequence.
+    Class to analyse and trim leading/trailing Ns in a sequence.
     """
     def __init__(self, sequence: str):
         """
@@ -17,7 +17,7 @@ class NsHandler:
 
     def count_leading_ns(self) -> int:
         """
-        Count leading N's and get a new starting point.
+        Count leading Ns and get a new starting point.
         """
         start = 0
         while start < self.n and self.sequence[start] == 'N':
@@ -27,7 +27,7 @@ class NsHandler:
 
     def count_trailing_ns(self) -> int:
         """
-        Count trailing N's and get a new ending point.
+        Count trailing Ns and get a new ending point.
         """
         end = self.n - 1
         while end >= self.start and self.sequence[end] == 'N':
@@ -37,13 +37,13 @@ class NsHandler:
 
     def count_internal_ns(self) -> int:
         """
-        Count internal N's.
+        Count internal Ns.
         """
         return self.sequence[self.start:self.end].count('N')
 
     def get_core_sequence(self) -> str | None:
         """
-        Trim leading and trailing N's.
+        Trim leading and trailing Ns.
         """
         if self.start <= self.end:
             return self.sequence[self.start:self.end]
