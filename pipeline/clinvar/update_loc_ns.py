@@ -22,6 +22,3 @@ df = df.dropna(subset=['loc'])
 df = df.drop(columns='leading_ns')
 
 df.to_csv(out_path, sep=';', index=False)
-
-
-

@@ -3,6 +3,7 @@
 """
 
 import pandas as pd
+from utils import get_seq
 from tqdm import tqdm
 
 
@@ -33,22 +34,17 @@ def grch38loc_validator(filename):
     if mismatches > 0:
         print("\n--- Example mismatches ---")
         print(df.loc[~df['Match'], ['GRCh38Location', 'GenomicReference', 'RefPos']].head(10))
-        
-
-genome_cache = {}
 
 
-def get_seq(accession):
-    if accession not in genome_cache:
-        with open(f"data/genome/chr/preprocessed/{accession}.txt") as f:
-            genome_cache[accession] = f.read()
-    return genome_cache[accession]
-
-
-def base_validator(accession: str, loc: int, ref: str) -> bool:
-    seq = get_seq(accession)
-    return seq[loc] == ref
-
+def base_validator(accession: str | None, loc: int, ref: str, seq=None) -> bool:
+    if seq is None:
+        sequence = get_seq(accession)
+        if sequence is None:
+            return False
+        return sequence[loc] == ref
+    else:
+        center = len(seq) // 2
+        return seq[center] == ref
 
 
 data = pd.read_csv("data/clinvar/04_updated_loc.csv", delimiter=';', usecols=['accession', 'loc', 'ref'])
