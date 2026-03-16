@@ -4,39 +4,37 @@
 
 import pandas as pd
 from tqdm import tqdm
-from pipeline.utils import get_seq
+from pipeline.genome.sequence_extractor import SequenceExtractor
 from pipeline.clinvar.validators import base_validator
 
+input_path = "data/clinvar/05_updated_loc_sample.csv"
+output_path = "data/fcgr/01_fcgr_sequences.csv"
 
-#TODO: Add: function to mutate a sequence, extraction to CSV
+df = pd.read_csv(input_path, delimiter=';')
 
-def sequence_extractor(accession: str, loc: int, seq_len: int) -> str | None:
-    seq = get_seq(accession)
-
-    if loc == -1:
-        return None
-
-    half = seq_len // 2
-    start = max(0, loc - half)
-    end = min(len(seq), loc + half)
-
-    return seq[start:end]
-
-data = pd.read_csv("data/clinvar/04_updated_loc.csv", delimiter=';', usecols=['accession', 'loc', 'ref'])
-seq_len = 500
+seq_lens = [500, 1000, 1500, 2000]
 
 matches, mismatches = 0, 0
 
-print(f"[INFO] Extracting sequences of length {seq_len}")
-
-for row in tqdm(data.itertuples(index=False), total=len(data)):
-    ref_sequence = sequence_extractor(row.accession, int(row.loc), seq_len=seq_len)
-    if ref_sequence is None:
-        continue
-    if base_validator(sequence=ref_sequence, loc=seq_len // 2, ref=row.ref):
-        matches += 1
-    else:
-        mismatches += 1
+print("--- PROGRAM STARTED ---")
+for seq_len in seq_lens:
+    print(f"[INFO] Extracting sequences of length {seq_len}")
+    ref_col = []
+    mut_col = []
+    for row in tqdm(df.itertuples(index=False), total=len(df)):
+        ref, mut = SequenceExtractor(row.accession, row.loc, row.mut, seq_len).get_sequences()
+        ref_col.append(ref)
+        mut_col.append(mut)
+        if base_validator(sequence=ref, loc=seq_len // 2, ref=row.ref):
+            matches += 1
+        else:
+            mismatches += 1
+        if base_validator(sequence=mut, loc=seq_len // 2, ref=row.mut):
+            matches += 1
+        else:
+            mismatches += 1
+    df[f"ref_{seq_len}"] = ref_col
+    df[f"mut_{seq_len}"] = mut_col
 
 match_rate = matches / (matches + mismatches) * 100
 
@@ -44,3 +42,5 @@ print("[INFO] Validation summary")
 print(f"Matches: {matches}")
 print(f"Mismatches: {mismatches}")
 print(f"Success rate: {match_rate:.2f}%")
+
+df.to_csv(output_path, sep=';', index=False)
