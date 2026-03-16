@@ -3,8 +3,7 @@
 """
 
 import pandas as pd
-from utils import get_seq
-from tqdm import tqdm
+from pipeline.utils import get_seq
 
 
 def grch38loc_validator(filename):
@@ -36,32 +35,9 @@ def grch38loc_validator(filename):
         print(df.loc[~df['Match'], ['GRCh38Location', 'GenomicReference', 'RefPos']].head(10))
 
 
-def base_validator(accession: str | None, loc: int, ref: str, seq=None) -> bool:
-    if seq is None:
-        sequence = get_seq(accession)
-        if sequence is None:
-            return False
-        return sequence[loc] == ref
-    else:
-        center = len(seq) // 2
-        return seq[center] == ref
+def base_validator_acc(accession: str, loc: int, ref: str) -> bool:
+    return base_validator(sequence=get_seq(accession), loc=loc, ref=ref)
+    
 
-
-data = pd.read_csv("data/clinvar/04_updated_loc.csv", delimiter=';', usecols=['accession', 'loc', 'ref'])
-
-print("[INFO] Running validator")
-
-matches, mismatches = 0, 0
-
-for row in tqdm(data.itertuples(index=False), total=len(data)):
-    if base_validator(row.accession, int(row.loc), row.ref):
-        matches += 1
-    else:
-        mismatches += 1
-
-match_rate = matches / (matches + mismatches) * 100
-
-print("[INFO] Validation summary")
-print(f"Matches: {matches}")
-print(f"Mismatches: {mismatches}")
-print(f"Success rate: {match_rate:.2f}%")
+def base_validator(sequence: str, loc: int, ref: str) -> bool:
+    return sequence[loc] == ref
