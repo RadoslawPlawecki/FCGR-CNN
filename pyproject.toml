@@ -1,0 +1,19 @@
+[project]
+name = "fcgr-cnn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "biopython>=1.86",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.3",
+    "pandas>=3.0.1",
+    "polars>=1.39.0",
+    "pydantic-settings>=2.13.1",
+    "rich>=14.3.3",
+    "tqdm>=4.67.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
