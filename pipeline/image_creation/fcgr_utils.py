@@ -7,7 +7,7 @@ from pipeline.FCGR import FCGR
 
 settings = get_settings()
 
-def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None) -> None:
+def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None, save_original: bool = False) -> None:
     df = load_fcgr_seq(settings.fcgr_file)
     
     ref_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "ref"
@@ -42,12 +42,13 @@ def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None) -> None:
             fcgr_matrix_mut = fcgr_mut.fill_matrix()
 
             ref_img = fcgr_matrix_ref
-            np.save(f"{ref_dir}/{chromosome}_{location}_{label}_{size}_ref.npy", ref_img)
-
             mut_img = fcgr_matrix_mut
-            np.save(f"{mut_dir}/{chromosome}_{location}_{label}_{size}_mut.npy", mut_img)
-
             diff_img = np.abs(ref_img - mut_img)
+
+            if save_original:
+                np.save(f"{ref_dir}/{chromosome}_{location}_{label}_{size}_ref.npy", ref_img)
+                np.save(f"{mut_dir}/{chromosome}_{location}_{label}_{size}_mut.npy", mut_img)
+
             np.save(f"{diff_dir}/{chromosome}_{location}_{label}_{size}_diff.npy", diff_img)
             
         if i == stop_after:
