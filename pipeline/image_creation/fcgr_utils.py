@@ -1,5 +1,8 @@
 from tqdm import tqdm
 import numpy as np
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from pathlib import Path
 
 from pipeline.config import get_settings
 from pipeline.utils import load_fcgr_seq
@@ -7,53 +10,47 @@ from pipeline.FCGR import FCGR
 
 settings = get_settings()
 
+def _process_row(row: dict, k_mer: int, ref_dir: Path, mut_dir: Path, diff_dir: Path, save_original: bool) -> None:
+    chromosome = row["accession"]
+    location = row["loc"]
+    label = row["label"]
+
+    for ref in ["ref_500", "ref_1000", "ref_1500", "ref_2000"]:
+        seq_ref = row[ref]
+        seq_mut = row[ref.replace("ref", "mut")]
+        size = ref.split("_")[1]
+
+        ref_img = FCGR(seq_ref, k_mer=k_mer).fill_matrix()
+        mut_img = FCGR(seq_mut, k_mer=k_mer).fill_matrix()
+        diff_img = np.abs(ref_img - mut_img)
+
+        if save_original:
+            np.save(f"{ref_dir}/{chromosome}_{location}_{label}_{size}_ref.npy", ref_img)
+            np.save(f"{mut_dir}/{chromosome}_{location}_{label}_{size}_mut.npy", mut_img)
+
+        np.save(f"{diff_dir}/{chromosome}_{location}_{label}_{size}_diff.npy", diff_img)
+
+
 def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None, save_original: bool = False) -> None:
     df = load_fcgr_seq(settings.fcgr_file)
-    
+    if stop_after is not None:
+        df = df.head(stop_after)
+
     ref_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "ref"
     mut_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "mut"
     diff_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "diff"
-    
-    if not ref_dir.exists() or not mut_dir.exists() or not diff_dir.exists():
-        print(f"[INFO] Creating directories for FCGR images at {settings.data_dir / 'fcgr_images'}...")
-    
-        ref_dir.mkdir(parents=True, exist_ok=True)
-        mut_dir.mkdir(parents=True, exist_ok=True)
-        diff_dir.mkdir(parents=True, exist_ok=True)
-        print(f"[INFO] Directories created successfully.")
-    else:
-        print(f"[INFO] Directories for FCGR images already exist at {settings.data_dir / 'fcgr_images'}.")
 
-    print(f"[INFO] Starting FCGR image creation for {len(df)} rows with k-mer={k_mer}...")
-    for i, row in enumerate(tqdm(df.iter_rows(named=True), desc="Creating FCGR images", unit="row")):
-        chromosome = row["accession"]
-        location = row["loc"]
-        label = row["label"]
-        ref_img = None
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    mut_dir.mkdir(parents=True, exist_ok=True)
+    diff_dir.mkdir(parents=True, exist_ok=True)
+
+    worker = partial(_process_row, k_mer=k_mer, ref_dir=ref_dir, mut_dir=mut_dir,
+                     diff_dir=diff_dir, save_original=save_original)
+
+    print(f"[INFO] Starting FCGR image creation for {len(df)} rows with k-mer={k_mer}, workers={settings.workers}...")
+    with ProcessPoolExecutor(max_workers=settings.workers) as executor:
+        list(tqdm(executor.map(worker, df.iter_rows(named=True)), total=len(df), desc="Creating FCGR images", unit="row"))
         
-        for ref in ["ref_500", "ref_1000", "ref_1500", "ref_2000"]:
-            seq_ref = row[ref]
-            seq_mut = row[ref.replace("ref", "mut")]
-            size = ref.split("_")[1]
-            
-            fcgr_ref = FCGR(seq_ref, k_mer=k_mer)
-            fcgr_mut = FCGR(seq_mut, k_mer=k_mer)
-            fcgr_matrix_ref = fcgr_ref.fill_matrix()
-            fcgr_matrix_mut = fcgr_mut.fill_matrix()
-
-            ref_img = fcgr_matrix_ref
-            mut_img = fcgr_matrix_mut
-            diff_img = np.abs(ref_img - mut_img)
-
-            if save_original:
-                np.save(f"{ref_dir}/{chromosome}_{location}_{label}_{size}_ref.npy", ref_img)
-                np.save(f"{mut_dir}/{chromosome}_{location}_{label}_{size}_mut.npy", mut_img)
-
-            np.save(f"{diff_dir}/{chromosome}_{location}_{label}_{size}_diff.npy", diff_img)
-            
-        if i == stop_after:
-            print(f"[INFO] Stopped after processing {stop_after} rows for testing purposes.")
-            break
     print(f"[INFO] Finished creating FCGR images for {len(df)} rows.")
     
 def show_fcgr_image(k_mer: int, chromosome: str, location: str, label: str, size: str) -> None:
