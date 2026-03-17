@@ -3,6 +3,9 @@
 """
 
 import re
+from pathlib import Path
+import polars as pl
+
 
 def is_valid_dna(sequence):
         """
@@ -22,3 +25,15 @@ def get_seq(accession):
         with open(f"data/genome/chr/preprocessed/{accession}.txt") as f:
             genome_cache[accession] = f.read()
     return genome_cache[accession]
+
+def load_fcgr_seq(path: Path) -> pl.DataFrame:
+    try:
+        df = pl.read_csv(path, separator=";")
+    except FileNotFoundError:
+        print(f"File not found: {path}")
+        raise
+    except Exception as e:
+        print(f"Error loading FCGR sequence data: {e}")
+        raise
+    print(f"[INFO] Successfully loaded FCGR sequence data from {path}")
+    return df

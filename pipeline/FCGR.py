@@ -87,7 +87,7 @@ class FCGR:
         :return initialized matrix with zeros:
         """
         rows = cols = self.img_size
-        return np.zeros((rows, cols))
+        return np.zeros((rows, cols), dtype=np.float32)
     
     def point_pixel_map(self):
         """
@@ -102,7 +102,7 @@ class FCGR:
         for i in range(len(points)):
             if i < self.k_mer - 1:
                 continue
-            pixel = (math.floor(points[i][1] * const), math.floor(points[i][0] * const))
+            pixel = (min(int(points[i][1] * const), const - 1), min(int(points[i][0] * const), const - 1))
             pixels.append(pixel)
         return pixels
 
