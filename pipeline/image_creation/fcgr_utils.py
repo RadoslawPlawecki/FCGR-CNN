@@ -61,32 +61,38 @@ def show_fcgr_image(k_mer: int, chromosome: str, location: str, label: str, size
     ref_img_path = ref_dir / f"{chromosome}_{location}_{label}_{size}_ref.npy"
     mut_img_path = mut_dir / f"{chromosome}_{location}_{label}_{size}_mut.npy"
     diff_img_path = diff_dir / f"{chromosome}_{location}_{label}_{size}_diff.npy"
-    
-    try:
-        ref_img = np.load(ref_img_path)
-        mut_img = np.load(mut_img_path)
-        diff_img = np.load(diff_img_path)
-    except FileNotFoundError as e:
-        print(f"File not found: {e.filename}")
-        return
-    except Exception as e:
-        print(f"Error loading images: {e}")
+
+    images_to_show: list[tuple[str, np.ndarray]] = []
+
+    for title, img_path in [
+        ("Reference Image", ref_img_path),
+        ("Mutated Image", mut_img_path),
+        ("Difference Image", diff_img_path),
+    ]:
+        if not img_path.exists():
+            print(f"File not found: {img_path}")
+            continue
+
+        try:
+            images_to_show.append((title, np.load(img_path)))
+        except Exception as e:
+            print(f"Error loading {img_path.name}: {e}")
+
+    if not images_to_show:
+        print("No images to display.")
         return
     
     import matplotlib.pyplot as plt
     
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    axes[0].imshow(ref_img, cmap='gray')
-    axes[0].set_title('Reference Image')
-    axes[0].axis('off')
-    
-    axes[1].imshow(mut_img, cmap='gray')
-    axes[1].set_title('Mutated Image')
-    axes[1].axis('off')
-    
-    axes[2].imshow(diff_img, cmap='gray')
-    axes[2].set_title('Difference Image')
-    axes[2].axis('off')
+    fig, axes = plt.subplots(1, len(images_to_show), figsize=(5 * len(images_to_show), 5))
+
+    if len(images_to_show) == 1:
+        axes = [axes]
+
+    for ax, (title, image) in zip(axes, images_to_show):
+        ax.imshow(image, cmap='gray')
+        ax.set_title(title)
+        ax.axis('off')
     
     plt.tight_layout()
     plt.show()
