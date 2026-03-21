@@ -10,7 +10,7 @@ from pipeline.FCGR import FCGR
 
 settings = get_settings()
 
-def _process_row(row: dict, k_mer: int, ref_dir: Path, mut_dir: Path, diff_dir: Path, save_original: bool) -> None:
+def _process_row(row: dict, k_mer: int, images_dir: Path, save_original: bool) -> None:
     chromosome = row["accession"]
     location = row["loc"]
     label = row["label"]
@@ -20,15 +20,23 @@ def _process_row(row: dict, k_mer: int, ref_dir: Path, mut_dir: Path, diff_dir: 
         seq_mut = row[ref.replace("ref", "mut")]
         size = ref.split("_")[1]
 
+        base = images_dir / str(k_mer) / size
+        diff_dir = base / "diff" / str(label)
+        diff_dir.mkdir(parents=True, exist_ok=True)
+
         ref_img = FCGR(seq_ref, k_mer=k_mer).fill_matrix()
         mut_img = FCGR(seq_mut, k_mer=k_mer).fill_matrix()
         diff_img = np.abs(ref_img - mut_img)
 
         if save_original:
-            np.save(f"{ref_dir}/{chromosome}_{location}_{label}_{size}_ref.npy", ref_img)
-            np.save(f"{mut_dir}/{chromosome}_{location}_{label}_{size}_mut.npy", mut_img)
+            ref_dir = base / "ref" / str(label)
+            mut_dir = base / "mut" / str(label)
+            ref_dir.mkdir(parents=True, exist_ok=True)
+            mut_dir.mkdir(parents=True, exist_ok=True)
+            np.save(ref_dir / f"{chromosome}_{location}.npy", ref_img)
+            np.save(mut_dir / f"{chromosome}_{location}.npy", mut_img)
 
-        np.save(f"{diff_dir}/{chromosome}_{location}_{label}_{size}_diff.npy", diff_img)
+        np.save(diff_dir / f"{chromosome}_{location}.npy", diff_img)
 
 
 def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None, save_original: bool = False) -> None:
@@ -36,16 +44,10 @@ def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None, save_original
     if stop_after is not None:
         df = df.head(stop_after)
 
-    ref_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "ref"
-    mut_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "mut"
-    diff_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "diff"
+    images_dir = settings.data_dir / "fcgr_images"
+    images_dir.mkdir(parents=True, exist_ok=True)
 
-    ref_dir.mkdir(parents=True, exist_ok=True)
-    mut_dir.mkdir(parents=True, exist_ok=True)
-    diff_dir.mkdir(parents=True, exist_ok=True)
-
-    worker = partial(_process_row, k_mer=k_mer, ref_dir=ref_dir, mut_dir=mut_dir,
-                     diff_dir=diff_dir, save_original=save_original)
+    worker = partial(_process_row, k_mer=k_mer, images_dir=images_dir, save_original=save_original)
 
     print(f"[INFO] Starting FCGR image creation for {len(df)} rows with k-mer={k_mer}, workers={settings.workers}...")
     with ProcessPoolExecutor(max_workers=settings.workers) as executor:
@@ -54,13 +56,11 @@ def create_fcgr_img(k_mer: int = 6, stop_after: int | None = None, save_original
     print(f"[INFO] Finished creating FCGR images for {len(df)} rows.")
     
 def show_fcgr_image(k_mer: int, chromosome: str, location: str, label: str, size: str) -> None:
-    ref_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "ref"
-    mut_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "mut"
-    diff_dir = settings.data_dir / "fcgr_images" / f"k_{k_mer}" / "diff"
+    base = settings.data_dir / "fcgr_images" / str(k_mer) / size
 
-    ref_img_path = ref_dir / f"{chromosome}_{location}_{label}_{size}_ref.npy"
-    mut_img_path = mut_dir / f"{chromosome}_{location}_{label}_{size}_mut.npy"
-    diff_img_path = diff_dir / f"{chromosome}_{location}_{label}_{size}_diff.npy"
+    ref_img_path = base / "ref" / label / f"{chromosome}_{location}.npy"
+    mut_img_path = base / "mut" / label / f"{chromosome}_{location}.npy"
+    diff_img_path = base / "diff" / label / f"{chromosome}_{location}.npy"
 
     images_to_show: list[tuple[str, np.ndarray]] = []
 
