@@ -12,6 +12,7 @@ dependencies = [
     "polars>=1.39.0",
     "pydantic-settings>=2.13.1",
     "rich>=14.3.3",
+    "torch[cuda]>=2.10.0",
     "tqdm>=4.67.3",
 ]
 

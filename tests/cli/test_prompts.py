@@ -28,8 +28,10 @@ def test_parse_stop_after_non_int_raises():
 def test_is_valid_kmer_bounds():
     assert is_valid_kmer(2) is True
     assert is_valid_kmer(6) is True
+    assert is_valid_kmer(7) is True
+    assert is_valid_kmer(8) is True
     assert is_valid_kmer(1) is False
-    assert is_valid_kmer(7) is False
+    assert is_valid_kmer(9) is False
 
 
 def test_valid_sizes_set():

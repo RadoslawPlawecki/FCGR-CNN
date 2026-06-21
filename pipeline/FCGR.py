@@ -28,8 +28,8 @@ class FCGR:
         if self.__is_valid_dna(sequence=sequence) is False:
             raise ValueError("Sequence is not correct! Allowed characters: A, C, T, G.")
         self.sequence = sequence.upper()
-        if k_mer < 2 or k_mer > 6:
-            raise ValueError("k-mer takes values from the range [3,6]!")
+        if k_mer < 2 or k_mer > 8:
+            raise ValueError("k-mer takes values from the range [2,8]!")
         if k_mer > len(sequence):
             raise ValueError("k-mer cannot be longer than a sequence!")
         self.k_mer = k_mer

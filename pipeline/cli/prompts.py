@@ -22,7 +22,7 @@ def parse_stop_after(value: str) -> int | None:
 
 
 def is_valid_kmer(k: int) -> bool:
-    return 2 <= k <= 6
+    return 2 <= k <= 8
 
 
 def prompt_create_fcgr_img() -> None:
@@ -32,7 +32,7 @@ def prompt_create_fcgr_img() -> None:
         k_mer = IntPrompt.ask("k-mer length", default=6)
         if is_valid_kmer(k_mer):
             break
-        console.print("[red]k-mer must be between 2 and 6.[/red]")
+        console.print("[red]k-mer must be between 2 and 8.[/red]")
 
     while True:
         raw = Prompt.ask("Stop after N rows [blank = all]", default="")
@@ -66,7 +66,7 @@ def prompt_show_fcgr_image() -> None:
         k_mer = IntPrompt.ask("k-mer length")
         if is_valid_kmer(k_mer):
             break
-        console.print("[red]k-mer must be between 2 and 6.[/red]")
+        console.print("[red]k-mer must be between 2 and 8.[/red]")
 
     chromosome = Prompt.ask("Chromosome (accession)")
     location = Prompt.ask("Location")
