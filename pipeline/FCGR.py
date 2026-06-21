@@ -28,8 +28,8 @@ class FCGR:
         if self.__is_valid_dna(sequence=sequence) is False:
             raise ValueError("Sequence is not correct! Allowed characters: A, C, T, G.")
         self.sequence = sequence.upper()
-        if k_mer < 2 or k_mer > 6:
-            raise ValueError("k-mer takes values from the range [3,6]!")
+        if k_mer < 2 or k_mer > 8:
+            raise ValueError("k-mer takes values from the range [2,8]!")
         if k_mer > len(sequence):
             raise ValueError("k-mer cannot be longer than a sequence!")
         self.k_mer = k_mer
@@ -87,7 +87,7 @@ class FCGR:
         :return initialized matrix with zeros:
         """
         rows = cols = self.img_size
-        return np.zeros((rows, cols))
+        return np.zeros((rows, cols), dtype=np.float32)
     
     def point_pixel_map(self):
         """
@@ -102,7 +102,7 @@ class FCGR:
         for i in range(len(points)):
             if i < self.k_mer - 1:
                 continue
-            pixel = (math.floor(points[i][1] * const), math.floor(points[i][0] * const))
+            pixel = (min(int(points[i][1] * const), const - 1), min(int(points[i][0] * const), const - 1))
             pixels.append(pixel)
         return pixels
 

@@ -3,6 +3,8 @@
 """
 
 import pandas as pd
+from pipeline.utils import get_seq
+
 
 def grch38loc_validator(filename):
     df = pd.read_csv(filename, delimiter=';')
@@ -31,4 +33,11 @@ def grch38loc_validator(filename):
     if mismatches > 0:
         print("\n--- Example mismatches ---")
         print(df.loc[~df['Match'], ['GRCh38Location', 'GenomicReference', 'RefPos']].head(10))
-        
+
+
+def base_validator_acc(accession: str, loc: int, ref: str) -> bool:
+    return base_validator(sequence=get_seq(accession), loc=loc, ref=ref)
+    
+
+def base_validator(sequence: str, loc: int, ref: str) -> bool:
+    return sequence[loc] == ref
